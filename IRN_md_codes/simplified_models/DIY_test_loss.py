@@ -50,7 +50,7 @@ class DownNet(nn.Cell):
         self.operations = nn.CellList(operations)
         self.conv2 = nn.Conv2d(3,4,(2,2),stride=2,has_bias=True,weight_init='zeros')
 
-    def construct(self, x, rev=False, cal_jacobian=False):
+    def construct(self, x, rev=False):
         out = x
         print(out.shape)
         for op in self.operations:

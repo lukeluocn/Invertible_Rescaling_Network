@@ -1,18 +1,13 @@
-import math
-# import torch
-# import torch.nn as nn
-# import torch.nn.functional as F
 import numpy as np
 
 import mindspore as ms
 import mindspore.nn as nn
-from mindspore.ops import functional as F
 from mindspore.ops import operations as ops
-from mindspore import dtype as mstype
 
 
 class InvBlockExp(nn.Cell):
-    def __init__(self, subnet_constructor, channel_num, channel_split_num, clamp=1.):
+
+    def __init__(self, block, channel_num, channel_split_num, clamp=1.):
         super(InvBlockExp, self).__init__()
 
         self.split_len1 = channel_split_num
@@ -20,7 +15,7 @@ class InvBlockExp(nn.Cell):
 
         self.clamp = clamp
 
-        self.F = subnet_constructor(self.split_len2, self.split_len1)
+        self.F = block(self.split_len2, self.split_len1)
 
         self.sigmoid = ops.Sigmoid()
         self.exp = ops.Exp()
@@ -36,14 +31,6 @@ class InvBlockExp(nn.Cell):
             y1 = x1 + self.F(x2)
 
         return y1
-
-    def jacobian(self, x, rev=False):
-        if not rev:
-            jac = self.sum(self.s)
-        else:
-            jac = -self.sum(self.s)
-
-        return jac / x.shape[0]
 
 
 class HaarDownsampling(nn.Cell):
@@ -109,9 +96,6 @@ class HaarDownsampling(nn.Cell):
             # return self.conv2d_transpose(out)
             return self.conv2d_transpose(out,self.haar_weights,(out.shape[0],self.haar_weights.shape[1]*self.channel_in,out.shape[2]*2,out.shape[3]*2))
 
-    def jacobian(self, x, rev=False):
-        return self.last_jac 
-
 
 class InvRescaleNet(nn.Cell):
     def __init__(self, channel_in=3, channel_out=3, subnet_constructor=None, block_num=[], down_num=2):
@@ -128,25 +112,17 @@ class InvRescaleNet(nn.Cell):
                 operations.append(b)
         self.operations = nn.CellList(operations)
 
-    def construct(self, x, rev=False, cal_jacobian=False):
+    def construct(self, x, rev=False):
         out = x
-        jacobian = 0
 
         if not rev:
             for op in self.operations:
                 out = op.construct(out, rev)
-                if cal_jacobian:
-                    jacobian += op.jacobian(out, rev)
         else:
             for op in reversed(self.operations):
                 out = op.construct(out, rev)
-                if cal_jacobian:
-                    jacobian += op.jacobian(out, rev)
 
-        if cal_jacobian:
-            return out, jacobian
-        else:
-            return out
+        return out
             
 
 
