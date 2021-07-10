@@ -27,7 +27,7 @@ import math
 import numpy as np
 
 from models.modules.loss import ReconstructionLoss
-from models.modules.Inv_arch import HaarDownsampling, InvBlockExp
+from models.modules.inv import HaarDownsampling, InvBlockExp
 from models.modules.block import DenseBlock
 
 class DownNet(nn.Cell):
