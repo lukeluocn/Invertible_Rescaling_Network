@@ -28,7 +28,7 @@ import numpy as np
 
 from models.modules.loss import ReconstructionLoss
 from models.modules.Inv_arch import HaarDownsampling, InvBlockExp
-from models.modules.Subnet_constructor import subnet
+from models.modules.block import DenseBlock
 
 class DownNet(nn.Cell):
     def __init__(self, channel_in=3, channel_out=3,subnet_constructor= None,block_num=[], down_num=2):
@@ -62,16 +62,10 @@ class DownNet(nn.Cell):
 
 def define_G(opt):
     opt_net = opt['network_G']
-    which_model = opt_net['which_model_G']
-    subnet_type = which_model['subnet_type']
-    if opt_net['init']:
-        init = opt_net['init']
-    else:
-        init = 'xavier'
 
     down_num = int(math.log(opt_net['scale'], 2))
 
-    netG = DownNet(opt_net['in_nc'], opt_net['out_nc'], subnet(subnet_type, init), opt_net['block_num'], down_num)
+    netG = DownNet(opt_net['in_nc'], opt_net['out_nc'], DenseBlock, opt_net['block_num'], down_num)
 
     return netG
 
